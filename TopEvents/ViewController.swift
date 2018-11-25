@@ -8,11 +8,13 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, LoadEventsDelegate {
 
     @IBOutlet weak var tableView: UITableView!
     var events: [Event] = []
 
+    var eventsRequest: EventsRequest?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -20,34 +22,22 @@ class ViewController: UIViewController {
         navigationItem.title = Bundle.main.infoDictionary!["CFBundleName"] as? String
         tableView.delegate = self
         tableView.dataSource = self
-        fetchJSON(urlString: "https://s3-ap-southeast-2.amazonaws.com/bridj-coding-challenge/events.json")
+        eventsRequest = EventsRequest()
+        eventsRequest?.delegate = self
+        eventsRequest?.loadEventsFromServer()
     }
 
-    fileprivate func fetchJSON(urlString: String){
-        guard let url = URL(string : urlString) else { return }
-        URLSession.shared.dataTask(with: url){ (data, _, err) in
-            DispatchQueue.main.async {
-                if let err = err{
-                    print("Failed",err)
-                    return
-                }
-                guard let data = data else { return }
-                do{
-                    let decoder = JSONDecoder()
-                    decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    let result = try decoder.decode(Events.self, from: data)
-                    
-                    self.events = result.events
-                        .filter({return $0.availableSeats > 0})
-                        .sorted(by: { return $0.date < $1.date })
-                    
-                    self.printEventsToTerminal(events: self.events)
-                    self.tableView.reloadData()
-                }catch let jsonErr{
-                    print("Failed decode", jsonErr)
-                }
-            }
-        }.resume()
+    func didFinishLoadingEvents(_ sender: Events) {
+        self.events = sender.events
+            .filter({return $0.availableSeats > 0})
+            .sorted(by: { return $0.date < $1.date })
+
+        self.printEventsToTerminal(events: self.events)
+        self.tableView.reloadData()
+    }
+    
+    func didFinishLoadingWithError(_ error: String) {
+        print(error)
     }
     
     fileprivate func printEventsToTerminal(events: [Event]){

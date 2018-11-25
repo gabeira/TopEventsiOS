@@ -26,7 +26,7 @@ class EventViewCell: UITableViewCell {
 
         //Converting the date string to readable format
         let date = event.date.parseISODate()
-        dateLabel?.text  =  date!.toString()
+        dateLabel?.text  =  date?.toString()
         
         if (event.labels.contains("play")){
             labelsLabel?.textColor = UIColor(red: 0.00, green: 1.00, blue: 0.00, alpha: 1.00)
